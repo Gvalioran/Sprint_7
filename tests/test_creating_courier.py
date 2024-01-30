@@ -20,37 +20,53 @@ class TestCreatingCourier:
             "firstName": courier["firstName"]
         }
         response = requests.post(Url.CREATE_COURIER, data=payload)
-        assert response.status_code == 409
+        assert response.status_code == 409 and response.json()["message"] == DataTest.ERROR_MESSAGE2
 
     @allure.title('Тест запрета создания курьеров без заполнения логина')
-    def test_creating_courier_without_login(self, courier):
+    def test_creating_courier_without_login(self):
         payload = {
             "login": "",
-            "password": courier["password"],
-            "firstName": courier["firstName"]
+            "password": helpers.generate_random_string(10),
+            "firstName": helpers.generate_random_string(10)
         }
         response = requests.post(Url.CREATE_COURIER, data=payload)
         assert response.status_code == 400
 
     @allure.title('Тест запрета создания курьеров без заполнения пароля')
-    def test_creating_courier_without_password(self, courier):
+    def test_creating_courier_without_password(self):
         payload = {
-            "login": courier["login"],
+            "login": helpers.generate_random_string(10),
             "password": "",
-            "firstName": courier["firstName"]
+            "firstName": helpers.generate_random_string(10)
         }
         response = requests.post(Url.CREATE_COURIER, data=payload)
         assert response.status_code == 400
 
     @allure.title('Тест на правильный код ответа при создании курьера')
-    def test_code_courier_creation_response(self, courier):
-        assert courier["status_code"] == 201
+    def test_code_courier_creation_response(self):
+        payload = {
+            "login": helpers.generate_random_string(10),
+            "password": helpers.generate_random_string(10),
+            "firstName": helpers.generate_random_string(10)
+        }
+        response = requests.post(Url.CREATE_COURIER, data=payload)
+        courier_id = helpers.login_courier(payload["login"], payload["password"]).json()["id"]
+        helpers.delite_courier(courier_id)
+        assert response.status_code == 201
 
     @allure.title('Тест сообщения успешного запроса на создание курьера')
-    def test_successful_request(self, courier):
-        assert courier["json"] == {'ok': True}
+    def test_successful_request(self):
+        payload = {
+            "login": helpers.generate_random_string(10),
+            "password": helpers.generate_random_string(10),
+            "firstName": helpers.generate_random_string(10)
+        }
+        response = requests.post(Url.CREATE_COURIER, data=payload)
+        courier_id = helpers.login_courier(payload["login"], payload["password"]).json()["id"]
+        helpers.delite_courier(courier_id)
+        assert response.json() == {'ok': True}
 
-    @allure.title('Тест корректного ответа без заполнения логина')
+    @allure.title('Тест правильного сообщения об ошибке при создании курьера без поля логин')
     def test_absence_login_field(self, courier):
         payload = {
             "password": courier["password"],
@@ -59,7 +75,7 @@ class TestCreatingCourier:
         response = requests.post(Url.CREATE_COURIER, data=payload)
         assert response.json()["message"] == DataTest.ERROR_MESSAGE1
 
-    @allure.title('Тест корректного ответа без заполнения пароля')
+    @allure.title('Тест правильного сообщения об ошибке при создании курьера без поля пароля')
     def test_absence_password_field(self, courier):
         payload = {
             "login": courier["login"],
@@ -67,13 +83,3 @@ class TestCreatingCourier:
         }
         response = requests.post(Url.CREATE_COURIER, data=payload)
         assert response.json()["message"] == DataTest.ERROR_MESSAGE1
-
-    @allure.title('Тест создания пользователя, логин которого уже используется')
-    def test_creation_username_used(self, courier):
-        payload = {
-            "login": courier["login"],
-            "password": courier["firstName"],
-            "firstName": courier["password"]
-        }
-        response = requests.post(Url.CREATE_COURIER, data=payload)
-        assert response.json()["message"] == DataTest.ERROR_MESSAGE2
